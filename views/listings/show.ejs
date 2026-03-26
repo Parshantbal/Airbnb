@@ -1,0 +1,221 @@
+<%-layout("/layout/boilerplate")%>
+<%
+    const isOwner = currUser && String(list.owner._id) === String(currUser._id);
+    const today = new Date().toISOString().split("T")[0];
+    const reviewCount = list.reviews.length;
+    const averageRating = reviewCount
+        ? (list.reviews.reduce((sum, review) => sum + Number(review.rating || 0), 0) / reviewCount).toFixed(1)
+        : null;
+%>
+
+<div class="row g-4 mt-2">
+    <div class="col-lg-7 offset-lg-1">
+        <h2 class="justify-content-start"><b><%= list.title %></b></h2>
+
+        <div class="card show-card listing-card">
+            <img src="<%= list.image %>" class="show-img" alt="hotel photos">
+            <div class="card-body p-3">
+                <p class="mb-2">Owned by: <i><%= list.owner.username %></i></p>
+                <p class="mb-3"><%= list.description %></p>
+
+                <div class="listing-meta">
+                    <span>&#8377;<%= (list.price).toLocaleString("en-IN") %> / night</span>
+                    <span><%= list.location %></span>
+                    <span><%= list.country %></span>
+                </div>
+            </div>
+        </div>
+
+        <% if (isOwner) { %>
+            <div class="btns mt-3">
+                <a href="/listing/<%=list._id%>/edit" class="btn btn-dark edit-btn">Edit</a>
+                <form method="POST" action="/listing/<%=list._id%>?_method=DELETE">
+                    <button class="btn btn-dark">delete</button>
+                </form>
+            </div>
+        <% } %>
+    </div>
+
+    <div class="col-lg-3">
+        <div class="card booking-panel shadow-sm">
+            <div class="card-body p-4">
+                <p class="booking-label mb-1">Book this stay</p>
+                <h4 class="mb-2">&#8377;<%= (list.price).toLocaleString("en-IN") %> <span class="small text-muted">/ night</span></h4>
+                <p class="text-muted">Choose your travel dates and guests to reserve this hotel.</p>
+
+                <% if (!currUser) { %>
+                    <div class="d-grid gap-2">
+                        <a href="/login" class="btn add-btn text-white">Login to book</a>
+                        <a href="/signup" class="btn btn-outline-dark">Create account</a>
+                    </div>
+                <% } else if (isOwner) { %>
+                    <div class="alert alert-light mb-0">
+                        You own this listing, so booking is disabled here.
+                    </div>
+                <% } else { %>
+                    <form method="POST" action="/listing/<%= list._id %>/cart" class="needs-validation booking-form" novalidate data-booking-form data-nightly-price="<%= list.price %>">
+                        <div class="mb-3">
+                            <label for="checkIn" class="form-label">Check-in</label>
+                            <input type="date" id="checkIn" name="booking[checkIn]" class="form-control" min="<%= today %>" required data-checkin>
+                            <div class="invalid-feedback">Select a valid check-in date.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="checkOut" class="form-label">Check-out</label>
+                            <input type="date" id="checkOut" name="booking[checkOut]" class="form-control" min="<%= today %>" required data-checkout>
+                            <div class="invalid-feedback">Select a valid check-out date.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="guests" class="form-label">Guests</label>
+                            <input type="number" id="guests" name="booking[guests]" class="form-control" min="1" value="1" required data-guests>
+                            <div class="invalid-feedback">Guests must be at least 1.</div>
+                        </div>
+
+                        <div class="booking-summary mb-3">
+                            <div>
+                                <span>Nights</span>
+                                <strong data-booking-nights>0</strong>
+                            </div>
+                            <div>
+                                <span>Guests</span>
+                                <strong data-booking-guests>1</strong>
+                            </div>
+                            <div class="booking-total-row">
+                                <span>Total</span>
+                                <strong>&#8377;<span data-booking-total>0</span></strong>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-outline-dark">Add to Cart</button>
+                            <button type="submit" formaction="/listing/<%= list._id %>/book" class="btn add-btn text-white">Book</button>
+                        </div>
+                    </form>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-7 offset-lg-1 mb-3">
+        <hr>
+        <section class="review-section">
+            <div class="review-section-head">
+                <div>
+                    <p class="review-kicker mb-2">Guest feedback</p>
+                    <h3 class="mb-2">Reviews and ratings</h3>
+                    <p class="text-muted mb-0">See what travelers liked, then share your own experience.</p>
+                </div>
+
+                <div class="review-summary-card">
+                    <% if (averageRating) { %>
+                        <p class="review-summary-label mb-1">Average rating</p>
+                        <div class="review-summary-score">
+                            <span class="review-summary-number"><%= averageRating %></span>
+                            <span class="review-summary-stars"><%- "&#9733;".repeat(5) %></span>
+                        </div>
+                        <p class="review-summary-meta mb-0"><%= reviewCount %> review<%= reviewCount === 1 ? "" : "s" %></p>
+                    <% } else { %>
+                        <p class="review-summary-label mb-1">No reviews yet</p>
+                        <p class="review-summary-meta mb-0">Be the first guest to rate this stay.</p>
+                    <% } %>
+                </div>
+            </div>
+
+            <div class="card review-form-card mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                        <div>
+                            <h4 class="mb-1">Leave a review</h4>
+                            <p class="text-muted mb-0">Your rating helps other users book with more confidence.</p>
+                        </div>
+                        <span class="review-pill">Quick feedback</span>
+                    </div>
+
+                    <% if (currUser) { %>
+                        <form method="POST" action="/listing/<%=list.id%>/review" novalidate class="needs-validation">
+                            <div class="mb-3">
+                                <label for="rating" class="form-lable">Rating</label>
+                                <input type="range" min="1" max="5" id="rating" name="review[rating]" class="form-range">
+                                <div class="rating-scale">
+                                    <span>Poor</span>
+                                    <span>Excellent</span>
+                                </div>
+                            </div>
+
+                            <div class="comment mb-3">
+                                <label for="comment" class="form-lable">Comment</label>
+                                <textarea id="comment" rows="5" cols="50" name="review[comment]" class="form-control review-textarea" required placeholder="Tell future guests what stood out about this stay"></textarea>
+                                <div class="invalid-feedback">
+                                    Please enter the review!!
+                                </div>
+                            </div>
+
+                            <button class="btn add-btn text-white">Submit review</button>
+                        </form>
+                    <% } else { %>
+                        <div class="review-login-box">
+                            <p class="mb-3">Login first so your review is posted with your name.</p>
+                            <div class="d-flex flex-wrap gap-2">
+                                <a href="/login" class="btn add-btn text-white">Login to review</a>
+                                <a href="/signup" class="btn btn-outline-dark">Create account</a>
+                            </div>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <h4 class="mb-0">What guests are saying</h4>
+                <% if (reviewCount) { %>
+                    <span class="text-muted"><%= reviewCount %> published review<%= reviewCount === 1 ? "" : "s" %></span>
+                <% } %>
+            </div>
+
+            <% if (!reviewCount) { %>
+                <div class="empty-state">
+                    <h4>No reviews yet</h4>
+                    <p class="text-muted mb-0">Once guests start sharing feedback, the rating section will light up here.</p>
+                </div>
+            <% } else { %>
+                <div class="row">
+                    <% for(review of list.reviews) {
+                        const ratingValue = Number(review.rating || 0);
+                    %>
+                        <div class="col-md-6 mb-3">
+                            <div class="card review-card h-100">
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                                        <div>
+                                            <h5 class="card-title mb-1"><%= review.author && review.author.username ? review.author.username : "Guest reviewer" %></h5>
+                                            <div class="review-stars">
+                                                <% for (let index = 0; index < 5; index++) { %>
+                                                    <% if (index < ratingValue) { %>
+                                                        <span>&#9733;</span>
+                                                    <% } else { %>
+                                                        <span class="review-stars-muted">&#9734;</span>
+                                                    <% } %>
+                                                <% } %>
+                                            </div>
+                                        </div>
+                                        <span class="review-score-badge"><%= review.rating %>.0</span>
+                                    </div>
+
+                                    <p class="card-text review-comment mb-3"><%=review.comment%></p>
+
+                                    <% if (currUser && review.author && String(review.author._id) === String(currUser._id)) { %>
+                                        <form method="POST" action="/listing/<%=list._id%>/review/<%=review._id%>?_method=DELETE">
+                                            <button class="btn btn-sm btn-outline-dark">Delete review</button>
+                                        </form>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </div>
+                    <% }%>
+                </div>
+            <% } %>
+        </section>
+    </div>
+</div>

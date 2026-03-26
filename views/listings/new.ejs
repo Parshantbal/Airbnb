@@ -1,0 +1,70 @@
+<%layout("/layout/boilerplate")%>
+<body>
+    
+    
+      <h2> create a new list :</h2>
+    
+    
+     <form method="POST" action="/listing" novalidate class="needs-validation">
+
+      <div class="row"></div>
+      <div class="col-8 offset-2">
+        <div  class="mb-3">
+            <label for="title" class="form-label">Title </label>
+            <input name="list[title]" placeholder="enter title" class="form-control"required>
+            <div class="invalid-feedback">
+               Please provide a valid title
+            </div>
+        </div>
+       
+        <div  class="mb-3">
+            <label for="description" class="form-label">description </label>
+             <textarea name="list[description]" class="form-control" required></textarea>
+             <div class="invalid-feedback">
+                Please provide a valid description.
+             </div>
+        </div>
+      
+    
+        <div  class="mb-3">
+             <label for="image" class="form-label">image link </label>
+             <input name="list[image]" placeholder="upload the link of image" class="form-control">
+        </div>
+    
+        <div  class="mb-3">
+             <label for="price" class="form-label">Price</label>
+             <input type="text" name="list[price]" placeholder="enter price" class="form-control" required>
+              <div class="invalid-feedback">
+                Please provide a valid Price.
+             </div>
+
+        </div>
+       
+        <div class="row">
+         <div  class="mb-3 col-md-4">
+             <label for="location" class="form-label">location </label>
+             <input type="text" name="list[location]" placeholder="enter location" class="form-control" required>
+              <div class="invalid-feedback">
+                Please provide a valid location.
+             </div>
+
+         </div>
+        
+         <div class="mb-3 col-md-8">
+            <label for="country" class="form-label">Country</label>
+            <input name="list[country]" placeholder="country" class="form-control" required>
+             <div class="invalid-feedback">
+                Please provide a valid country.
+             </div>
+
+         </div>
+        </div>
+       
+
+        <button class="btn btn-dark add-btn ">Add</button>
+        <br><br>
+     </form>
+     </div>
+
+    </div>
+</body>

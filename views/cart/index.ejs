@@ -1,0 +1,198 @@
+<%- layout("/layout/boilerplate") %>
+<%
+    const hasItems = cart && cart.items.length;
+    const formatDate = (dateValue) => new Date(dateValue).toLocaleDateString("en-IN", {
+        timeZone: "UTC",
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+    });
+%>
+
+<div class="cart-shell">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+        <div>
+            <h2 class="justify-content-start mb-1">Your cart</h2>
+            <p class="text-muted mb-0">Review your selected stays before payment.</p>
+        </div>
+        <a href="/listing" class="btn btn-outline-dark">Keep exploring</a>
+    </div>
+
+    <% if (!hasItems) { %>
+        <div class="empty-state">
+            <h4>Your cart is empty</h4>
+            <p class="text-muted">Add a hotel stay from a listing page to start booking.</p>
+            <a href="/listing" class="btn add-btn text-white">Browse stays</a>
+        </div>
+    <% } else { %>
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <% for (let item of cart.items) { %>
+                    <div class="card cart-item-card">
+                        <div class="row g-0 align-items-center">
+                            <div class="col-md-4 p-3">
+                                <img src="<%= item.image %>" alt="<%= item.title %>" class="cart-item-image">
+                            </div>
+                            <div class="col-md-8">
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between gap-3 flex-wrap">
+                                        <div>
+                                            <h4 class="mb-1"><%= item.title %></h4>
+                                            <p class="text-muted mb-3"><%= item.location %></p>
+                                        </div>
+                                        <div class="text-md-end">
+                                            <p class="mb-1">&#8377;<%= Number(item.nightlyPrice).toLocaleString("en-IN") %> / night</p>
+                                            <strong>&#8377;<%= Number(item.subtotal).toLocaleString("en-IN") %></strong>
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-2 text-muted mb-3">
+                                        <div class="col-sm-4">Check-in: <strong><%= formatDate(item.checkIn) %></strong></div>
+                                        <div class="col-sm-4">Check-out: <strong><%= formatDate(item.checkOut) %></strong></div>
+                                        <div class="col-sm-4">Guests: <strong><%= item.guests %></strong></div>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                        <span><strong><%= item.nights %></strong> night stay</span>
+                                        <form method="POST" action="/cart/items/<%= item._id %>?_method=DELETE">
+                                            <button class="btn btn-sm btn-outline-dark">Remove</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card cart-summary-card">
+                    <div class="card-body p-4">
+                        <h4 class="mb-3">Payment summary</h4>
+
+                        <div class="summary-line">
+                            <span>Items</span>
+                            <strong><%= totals.itemCount %></strong>
+                        </div>
+                        <div class="summary-line">
+                            <span>Total nights</span>
+                            <strong><%= totals.totalNights %></strong>
+                        </div>
+                        <div class="summary-line pt-3 border-top">
+                            <span>Total amount</span>
+                            <strong>&#8377;<%= totals.subtotal.toLocaleString("en-IN") %></strong>
+                        </div>
+
+                        <div class="alert alert-danger d-none mt-3 mb-0" data-checkout-feedback role="alert"></div>
+
+                        <% if (razorpayKeyId) { %>
+                            <button class="btn add-btn text-white w-100 mt-4" type="button" data-pay-now>
+                                Pay with Razorpay
+                            </button>
+                        <% } else { %>
+                            <div class="alert alert-warning mt-4 mb-0">
+                                Add `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` to enable checkout.
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <% } %>
+</div>
+
+<% if (hasItems && razorpayKeyId) { %>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const payButton = document.querySelector("[data-pay-now]");
+            const feedback = document.querySelector("[data-checkout-feedback]");
+
+            function showFeedback(message, type) {
+                feedback.textContent = message;
+                feedback.className = "alert mt-3 mb-0 alert-" + type;
+            }
+
+            payButton.addEventListener("click", async function () {
+                payButton.disabled = true;
+                feedback.className = "alert alert-danger d-none mt-3 mb-0";
+                feedback.textContent = "";
+
+                try {
+                    const orderResponse = await fetch("/checkout/create-order", {
+                        method: "POST",
+                        headers: {
+                            "Accept": "application/json"
+                        }
+                    });
+                    const orderData = await orderResponse.json().catch(function () {
+                        return {};
+                    });
+
+                    if (!orderResponse.ok) {
+                        throw new Error(orderData.message || "Unable to start payment.");
+                    }
+
+                    const razorpay = new Razorpay({
+                        key: orderData.key,
+                        amount: orderData.amount,
+                        currency: orderData.currency,
+                        name: orderData.name,
+                        description: orderData.description,
+                        order_id: orderData.orderId,
+                        prefill: {
+                            name: orderData.user.name || "",
+                            email: orderData.user.email || ""
+                        },
+                        theme: {
+                            color: "#f13b3b"
+                        },
+                        handler: async function (paymentResponse) {
+                            try {
+                                const verifyResponse = await fetch("/checkout/verify", {
+                                    method: "POST",
+                                    headers: {
+                                        "Content-Type": "application/json",
+                                        "Accept": "application/json"
+                                    },
+                                    body: JSON.stringify(paymentResponse)
+                                });
+                                const verifyData = await verifyResponse.json().catch(function () {
+                                    return {};
+                                });
+
+                                if (!verifyResponse.ok) {
+                                    throw new Error(verifyData.message || "Payment verification failed.");
+                                }
+
+                                window.location.href = verifyData.redirectUrl || "/bookings";
+                            } catch (error) {
+                                showFeedback(error.message, "danger");
+                                payButton.disabled = false;
+                            }
+                        },
+                        modal: {
+                            ondismiss: function () {
+                                showFeedback("Payment was cancelled. Your cart is still saved.", "warning");
+                                payButton.disabled = false;
+                            }
+                        }
+                    });
+
+                    razorpay.on("payment.failed", function (event) {
+                        const message = event.error && event.error.description
+                            ? event.error.description
+                            : "Payment failed. Please try again.";
+                        showFeedback(message, "danger");
+                        payButton.disabled = false;
+                    });
+
+                    razorpay.open();
+                } catch (error) {
+                    showFeedback(error.message, "danger");
+                    payButton.disabled = false;
+                }
+            });
+        });
+    </script>
+<% } %>

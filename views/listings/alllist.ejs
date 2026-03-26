@@ -1,0 +1,63 @@
+<% layout("/layout/boilerplate") %>
+
+<%
+    const activeFilters = [];
+    if (filters && filters.q) activeFilters.push(`Keyword: ${filters.q}`);
+    if (filters && filters.location) activeFilters.push(`Location: ${filters.location}`);
+    if (filters && filters.maxPrice) activeFilters.push(`Up to Rs. ${Number(filters.maxPrice).toLocaleString("en-IN")}`);
+%>
+
+<section class="listing-shell">
+    <div class="listing-hero">
+        <div class="listing-hero-copy">
+            <p class="listing-hero-kicker mb-2">Wonderlust stays</p>
+            <h2 class="listing-hero-title mb-2">Find a stay that feels like your next favorite trip.</h2>
+            <p class="listing-hero-text mb-0">
+                <%= lists.length %> stay<%= lists.length === 1 ? "" : "s" %> ready to explore across handpicked locations.
+            </p>
+        </div>
+
+        <div class="listing-hero-side">
+            <div class="hero-stat-card">
+                <span class="hero-stat-label">Results</span>
+                <strong class="hero-stat-value"><%= lists.length %></strong>
+            </div>
+
+            <% if (activeFilters.length) { %>
+                <div class="active-filters">
+                    <% for (let filterLabel of activeFilters) { %>
+                        <span class="filter-pill"><%= filterLabel %></span>
+                    <% } %>
+                </div>
+            <% } else { %>
+                <p class="hero-filter-hint mb-0">Use the navbar filters to narrow down by keyword, city, or budget.</p>
+            <% } %>
+        </div>
+    </div>
+
+    <% if (!lists.length) { %>
+        <div class="empty-state">
+            <h4>No listings matched your filters</h4>
+            <p class="text-muted">Try a different keyword, location, or price range.</p>
+            <a href="/listing" class="btn add-btn text-white">Reset filters</a>
+        </div>
+    <% } else { %>
+        <div class="row row-cols-lg-3 row-cols-md-2 row-cols-sm-1">
+            <%for(let list of lists){%>
+                <div class="card cols listing-card">
+                    <a href="/listing/<%=list._id%>" class="listing-link">
+                        <img src="<%=list.image%>" class="card-img-top" alt="pic not found" style="height: 20rem;">
+                        <div class="card-img-overlay"></div>
+                        <div class="card-body">
+                            <p class="card-text">
+                                <b><%=list.title%></b><br>
+                                <%=list.location%><br>
+                                &#8377;<%=(list.price).toLocaleString("en-IN") %>
+                            </p>
+                        </div>
+                    </a>
+                </div>
+            <%}%>
+        </div>
+    <% } %>
+</section>

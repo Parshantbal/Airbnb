@@ -1,0 +1,112 @@
+<nav class="navbar navbar-expand-md bg-body-tertiary border-bottom sticky-top">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/listing"><i class="fa-regular fa-compass"></i></a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup"
+            aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+            <div class="navbar-nav navbar-primary-links">
+              
+                <a class="nav-link" href="/listing">Explore</a>
+                <% if(currUser){ %>
+                    <a class="nav-link" href="/bookings">My bookings</a>
+                <% } %>
+               
+              
+            </div>
+            <form class="navbar-search ms-md-4 my-3 my-md-0" method="GET" action="/listing">
+                <input
+                    type="text"
+                    class="form-control"
+                    name="q"
+                    placeholder="Search hotel or title"
+                    value="<%= listingFilters.q %>"
+                >
+                <input
+                    type="text"
+                    class="form-control"
+                    name="location"
+                    placeholder="Location"
+                    value="<%= listingFilters.location %>"
+                >
+                <input
+                    type="number"
+                    class="form-control"
+                    name="maxPrice"
+                    min="0"
+                    placeholder="Max price"
+                    value="<%= listingFilters.maxPrice %>"
+                >
+                <button class="btn add-btn text-white" type="submit">Search</button>
+                <a href="/listing" class="btn btn-outline-dark">Clear</a>
+            </form>
+        </div>
+
+        <button
+            class="btn account-drawer-trigger"
+            type="button"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#accountDrawer"
+            aria-controls="accountDrawer"
+        >
+            <i class="fa-solid fa-sliders"></i>
+            <span>Menu</span>
+        </button>
+    </div>
+</nav>
+
+<div class="offcanvas offcanvas-end account-drawer" tabindex="-1" id="accountDrawer" aria-labelledby="accountDrawerLabel">
+    <div class="offcanvas-header border-bottom">
+        <div>
+            <p class="account-drawer-kicker mb-1">Wonderlust</p>
+            <h5 class="offcanvas-title mb-0" id="accountDrawerLabel">Account menu</h5>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body d-flex flex-column gap-3">
+        <% if (currUser) { %>
+            <div class="account-status-card">
+                <span class="account-status-label">Signed in as</span>
+                <strong><%= currUser.username %></strong>
+                <small><%= currUser.email %></small>
+            </div>
+
+            <a class="account-nav-link" href="/profile">
+                <span>My profile</span>
+                <i class="fa-solid fa-angle-right"></i>
+            </a>
+            <a class="account-nav-link" href="/bookings">
+                <span>My bookings</span>
+                <i class="fa-solid fa-angle-right"></i>
+            </a>
+            <a class="account-nav-link" href="/cart">
+                <span>Cart (<%= cartItemCount %>)</span>
+                <i class="fa-solid fa-angle-right"></i>
+            </a>
+            <a class="account-nav-link" href="/listing/new">
+                <span>Create list</span>
+                <i class="fa-solid fa-angle-right"></i>
+            </a>
+            <a class="account-nav-link" href="/logout">
+                <span>Logout</span>
+                <i class="fa-solid fa-angle-right"></i>
+            </a>
+        <% } else { %>
+            <div class="account-status-card">
+                <span class="account-status-label">Guest mode</span>
+                <strong>Join Wonderlust</strong>
+                <small>Sign up or log in to book stays, save cart items, and manage your profile.</small>
+            </div>
+
+            <a class="account-nav-link" href="/signup">
+                <span>Signup</span>
+                <i class="fa-solid fa-angle-right"></i>
+            </a>
+            <a class="account-nav-link" href="/login">
+                <span>Login</span>
+                <i class="fa-solid fa-angle-right"></i>
+            </a>
+        <% } %>
+    </div>
+</div>

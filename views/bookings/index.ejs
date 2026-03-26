@@ -1,0 +1,54 @@
+<%- layout("/layout/boilerplate") %>
+<%
+    const formatDate = (dateValue) => new Date(dateValue).toLocaleDateString("en-IN", {
+        timeZone: "UTC",
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+    });
+%>
+
+<div class="bookings-shell">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+        <div>
+            <h2 class="justify-content-start mb-1">My bookings</h2>
+            <p class="text-muted mb-0">Confirmed stays paid through Razorpay appear here.</p>
+        </div>
+        <a href="/listing" class="btn btn-outline-dark">Explore more stays</a>
+    </div>
+
+    <% if (!bookings.length) { %>
+        <div class="empty-state">
+            <h4>No bookings yet</h4>
+            <p class="text-muted">Once you complete a payment, your confirmed stay will show up here.</p>
+        </div>
+    <% } else { %>
+        <div class="row g-4">
+            <% for (let booking of bookings) { %>
+                <div class="col-lg-6">
+                    <div class="card booking-item-card h-100">
+                        <img src="<%= booking.image %>" alt="<%= booking.title %>" class="booking-item-image">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between gap-3 flex-wrap">
+                                <div>
+                                    <h4 class="mb-1"><%= booking.title %></h4>
+                                    <p class="text-muted mb-3"><%= booking.location %></p>
+                                </div>
+                                <span class="badge text-bg-success align-self-start">Confirmed</span>
+                            </div>
+
+                            <p class="mb-2">Stay: <strong><%= formatDate(booking.checkIn) %></strong> to <strong><%= formatDate(booking.checkOut) %></strong></p>
+                            <p class="mb-2">Guests: <strong><%= booking.guests %></strong></p>
+                            <p class="mb-2">Nights: <strong><%= booking.nights %></strong></p>
+                            <p class="mb-3">Paid: <strong>&#8377;<%= Number(booking.totalAmount).toLocaleString("en-IN") %></strong></p>
+
+                            <div class="text-muted small">
+                                Payment ID: <%= booking.razorpayPaymentId %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+    <% } %>
+</div>
