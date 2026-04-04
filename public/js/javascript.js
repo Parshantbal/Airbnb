@@ -57,7 +57,13 @@ document.addEventListener("DOMContentLoaded", function () {
       totalOutput.textContent = numberFormatter.format(total);
 
       if (checkInInput.value) {
-        checkOutInput.min = checkInInput.value;
+        const nextDay = new Date(checkInDate.getTime() + MS_PER_DAY);
+        const nextDayValue = nextDay.toISOString().split("T")[0];
+        checkOutInput.min = nextDayValue;
+
+        if (checkOutInput.value && checkOutInput.value <= checkInInput.value) {
+          checkOutInput.value = "";
+        }
       }
     }
 

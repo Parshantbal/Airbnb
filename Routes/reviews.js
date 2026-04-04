@@ -25,6 +25,10 @@ const validatereview = (req, res, next) => {
 //review route
 router.post("/", isLoggedIn, validatereview, wrapAsync(async (req, res) => {
     let rev = await listing.findById(req.params.id);
+    if (!rev) {
+        req.flash("error", "Listing you requested does not exist");
+        return res.redirect("/listing");
+    }
     let newReview = new review(req.body.review);
     newReview.author = req.user._id;
 
@@ -43,6 +47,12 @@ router.post("/", isLoggedIn, validatereview, wrapAsync(async (req, res) => {
 //reveiw delete route
 router.delete("/:reviewId", isLoggedIn, isReviewAuthor, wrapAsync(async(req,res)=>{
     let {id,reviewId}=req.params;
+
+    const listingDoc = await listing.findById(id);
+    if (!listingDoc) {
+        req.flash("error", "Listing you requested does not exist");
+        return res.redirect("/listing");
+    }
 
     await listing.findByIdAndUpdate(id,{$pull:{reviews:reviewId}})
     await review.findByIdAndDelete(reviewId);

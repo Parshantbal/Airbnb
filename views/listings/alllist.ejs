@@ -44,6 +44,7 @@
     <% } else { %>
         <div class="row row-cols-lg-3 row-cols-md-2 row-cols-sm-1">
             <%for(let list of lists){%>
+                <% const displayPrice = Number(list.price); %>
                 <div class="card cols listing-card">
                     <a href="/listing/<%=list._id%>" class="listing-link">
                         <img src="<%=list.image%>" class="card-img-top" alt="pic not found" style="height: 20rem;">
@@ -52,7 +53,11 @@
                             <p class="card-text">
                                 <b><%=list.title%></b><br>
                                 <%=list.location%><br>
-                                &#8377;<%=(list.price).toLocaleString("en-IN") %>
+                                <% if (Number.isFinite(displayPrice)) { %>
+                                    &#8377;<%= displayPrice.toLocaleString("en-IN") %>
+                                <% } else { %>
+                                    Price unavailable
+                                <% } %>
                             </p>
                         </div>
                     </a>

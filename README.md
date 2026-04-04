@@ -1,6 +1,6 @@
 # Wonderlust Airbnb Project
 
-A full-stack hotel booking web app built with Node.js, Express, MongoDB, EJS, and Razorpay.
+A full-stack hotel booking web app built with Node.js, Express, MongoDB, EJS, Cloudinary, and Razorpay.
 
 This project lets users explore listings, sign up or log in, add stays to cart, complete bookings with Razorpay, leave reviews, and manage their profile and trips.
 
@@ -11,6 +11,7 @@ This project lets users explore listings, sign up or log in, add stays to cart, 
 - Listing search and filters from the navbar
 - Booking flow with check-in, check-out, and guest count
 - Add to cart and direct book actions
+- Cloudinary image upload for listing photos
 - Razorpay payment integration
 - Booking history page
 - User profile page
@@ -25,6 +26,7 @@ This project lets users explore listings, sign up or log in, add stays to cart, 
 - EJS and EJS-Mate
 - Passport.js
 - Joi
+- Cloudinary
 - Razorpay
 - Bootstrap 5
 
@@ -64,6 +66,9 @@ MONGO_URL=mongodb://127.0.0.1:27017/wonderlust
 SESSION_SECRET=mySecretCode
 RAZORPAY_KEY_ID=your_razorpay_key_id
 RAZORPAY_KEY_SECRET=your_razorpay_key_secret
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 ```
 
 ### 4. Start MongoDB
@@ -146,6 +151,7 @@ http://localhost:8080
 ## Important Notes
 
 - Razorpay payment works only after adding valid API keys in `.env`
+- Cloudinary upload works only after adding valid Cloudinary keys in `.env`
 - Existing old reviews without author data may show a fallback reviewer label
 - The app currently uses local MongoDB
 - There is no inventory blocking or date conflict prevention in this version

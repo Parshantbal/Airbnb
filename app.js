@@ -5,6 +5,7 @@ const app = express();
 const mongoose = require("mongoose");
 const methodOverride = require("method-override")
 const path = require("path");
+const multer = require("multer");
 const ejsMate = require("ejs-mate")
 const Error = require("./util/expressError.js");
 const session = require("express-session");
@@ -30,6 +31,7 @@ app.set("views", path.join(__dirname, "/views"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use(methodOverride("_method"))
 app.engine("ejs", ejsMate);
 
@@ -52,9 +54,9 @@ async function main() {
 const sessionOption = {
     secret: process.env.SESSION_SECRET || "mySecretCode",
     resave : false,
-    saveUninitialized:true,
+    saveUninitialized:false,
     cookie:{
-        expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
+        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         maxAge:  7 * 24 * 60 * 60 * 1000,
         httpOnly: true, // this is used for secuirty purpose
     },
@@ -102,11 +104,20 @@ app.use("/bookings", bookingRouter);
 app.use("/",userRouter);
 
 app.use((req, res, next) => {
-    next(new Error(500, "page not found"));
+    next(new Error(404, "Page not found"));
 
 });
 app.use((err, req, res, next) => {
-    let { statusCode = 500, message = "something went wrong" } = err;
+    if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
+        err.statusCode = 400;
+        err.message = "Image size must be 5MB or smaller.";
+    }
+
+    if (err.message === "Only image files are allowed.") {
+        err.statusCode = 400;
+    }
+
+    let { statusCode = 500 } = err;
     res.status(statusCode).render("error.ejs", { err })
 });
 

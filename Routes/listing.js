@@ -7,12 +7,17 @@ const listing = require("../models/listing.js");
 const Cart = require("../models/cart.js");
 const { buildCartItem } = require("../util/booking.js");
 const { isLoggedIn, isOwner, isBookingAllowed, validateBooking } = require("../middleware.js");
+const { destroyStoredImage, getLocalImageUrl, removeLocalFile, upload, uploadImageToCloudinary } = require("../cloudconfig.js");
+const listingController = require("../controller/listing.js");
 
 
 
 const validateListing = (req, res, next) => {
     let { error } = listingSchema.validate(req.body);
     if (error) {
+        if (req.file && req.file.path) {
+            removeLocalFile(req.file.path);
+        }
         let errMsg = error.details.map((el) => el.message).join(",");
         throw new Error(400, errMsg);
     } else {
@@ -40,9 +45,47 @@ function escapeRegex(value) {
     return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function hasDisplayableListingData(listDoc) {
+    return (
+        listDoc &&
+        typeof listDoc.title === "string" &&
+        listDoc.title.trim() &&
+        typeof listDoc.location === "string" &&
+        listDoc.location.trim() &&
+        Number.isFinite(Number(listDoc.price))
+    );
+}
+
+async function resolveUploadedImage(file) {
+    if (!file || !file.path) {
+        return null;
+    }
+
+    const localImageUrl = getLocalImageUrl(file.path);
+
+    try {
+        const uploadedImage = await uploadImageToCloudinary(file.path);
+
+        if (uploadedImage && uploadedImage.imageUrl) {
+            await removeLocalFile(file.path);
+            return {
+                image: uploadedImage.imageUrl,
+                imageFilename: uploadedImage.imageFilename,
+            };
+        }
+    } catch (error) {
+        console.error("Cloudinary upload failed, using local image fallback:", error.message);
+    }
+
+    return {
+        image: localImageUrl,
+        imageFilename: "",
+    };
+}
 
 
-router.get("/", async (req, res) => {
+
+router.get("/", wrapAsync(async (req, res) => {
     const { q = "", location = "", maxPrice = "" } = req.query;
     const filters = {
         q: q.trim(),
@@ -76,12 +119,13 @@ router.get("/", async (req, res) => {
     }
 
     let lists = await listing.find(query);
+    lists = lists.filter(hasDisplayableListingData);
     res.render("./listings/alllist.ejs", { lists, filters })
-});
+
+
+}));
 //new list
-router.get("/new",isLoggedIn, (req, res) => {
-    res.render("./listings/new.ejs")
-})
+router.get("/new", isLoggedIn, listingController.newListing);
 
 //show route
 router.get("/:id",
@@ -96,9 +140,15 @@ router.get("/:id",
             })
             .populate("owner");
         if (!list) {
-            req.flash("error", "Listing you requested doe not exist");
+            req.flash("error", "Listing you requested does not exist");
             return res.redirect("/listing");
         };
+
+        if (!hasDisplayableListingData(list)) {
+            req.flash("error", "This listing is incomplete and cannot be displayed right now");
+            return res.redirect("/listing");
+        }
+
         res.render("./listings/show.ejs", { list })
     })
 );
@@ -132,14 +182,24 @@ router.post("/:id/book",
 //create new list
 router.post("/",
     isLoggedIn,
+    upload.single("image"),
     validateListing,
-    wrapAsync(async (req, res, next) => {
+    wrapAsync(async (req, res) => {
 
         const list = new listing(req.body.list);
-        list.owner=req.user._id;
+        list.owner = req.user._id;
+
+        if (req.file) {
+            const storedImage = await resolveUploadedImage(req.file);
+            if (storedImage) {
+                list.image = storedImage.image;
+                list.imageFilename = storedImage.imageFilename;
+            }
+        }
+
         await list.save();
-        req.flash("success", "new listing  created");
-        res.redirect("/listing")
+        req.flash("success", "New listing created successfully");
+        res.redirect("/listing");
 
     })
 )
@@ -147,24 +207,59 @@ router.post("/",
 router.get("/:id/edit",isLoggedIn, isOwner,wrapAsync(async (req, res) => {
     let { id } = req.params;
     let list = await listing.findById(id);
+    if (!list) {
+        req.flash("error", "Listing you requested does not exist");
+        return res.redirect("/listing");
+    }
     res.render("./listings/edit.ejs", { list })
 
 }))
 //update route
-validateListing,
-    router.put("/:id", isLoggedIn, isOwner,wrapAsync(async (req, res) => {
+router.put("/:id",
+    isLoggedIn,
+    isOwner,
+    upload.single("image"),
+    validateListing,
+    wrapAsync(async (req, res) => {
         let { id } = req.params;
-        await listing.findByIdAndUpdate(id, { ...req.body.list });
-        req.flash("success", " listing is updated")
+        const existingListing = await listing.findById(id);
+        if (!existingListing) {
+            if (req.file && req.file.path) {
+                await removeLocalFile(req.file.path);
+            }
+            req.flash("error", "Listing you requested does not exist");
+            return res.redirect("/listing");
+        }
+        const updateData = { ...req.body.list };
+
+        if (req.file) {
+            const storedImage = await resolveUploadedImage(req.file);
+            if (storedImage) {
+                await destroyStoredImage(existingListing.image, existingListing.imageFilename);
+                updateData.image = storedImage.image;
+                updateData.imageFilename = storedImage.imageFilename;
+            }
+        }
+
+        await listing.findByIdAndUpdate(id, updateData, {
+            runValidators: true,
+        });
+        req.flash("success", "Listing updated successfully")
         res.redirect(`/listing/${id}`);
 
-    }))
+    })
+);
 //DELTE ROUTE
 router.delete("/:id",isLoggedIn,isOwner,wrapAsync(async (req, res) => {
     let { id } = req.params;
-    let delteList = await listing.findByIdAndDelete(id);
-    console.log(delteList);
-    req.flash("success", " listing deleted")
+    let delteList = await listing.findById(id);
+    if (!delteList) {
+        req.flash("error", "Listing you requested does not exist");
+        return res.redirect("/listing");
+    }
+    await destroyStoredImage(delteList.image, delteList.imageFilename);
+    delteList = await listing.findByIdAndDelete(id);
+    req.flash("success", "Listing deleted successfully")
     res.redirect("/listing");
 
 }));

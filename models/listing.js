@@ -11,9 +11,9 @@ const listingSchema = new schema({
     description:String,
     image:{
         type:String,
-        default:"https://unsplash.com/photos/yellow-flowers-bloom-amidst-green-grass-99WR9gZrvdY",
-        set:(v)=>v===" "?"https://unsplash.com/photos/yellow-flowers-bloom-amidst-green-grass-99WR9gZrvdY":v,
+        default:"https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80",
     },
+    imageFilename:String,
     price:Number,
     location:{
         type:String,
@@ -38,7 +38,7 @@ const listingSchema = new schema({
 
 listingSchema.post("findOneAndDelete",async(listing)=>{
     if(listing){
-        await review.deleteMany({id:{$in:listing.reviews}});
+        await review.deleteMany({ _id: { $in: listing.reviews } });
     }
 })
 

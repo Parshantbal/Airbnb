@@ -435,6 +435,15 @@ h2{
     padding-right: 0;
 }
 
+.edit-image-preview{
+    width: 100%;
+    max-width: 22rem;
+    height: 14rem;
+    object-fit: cover;
+    border-radius: 1rem;
+    box-shadow: 0 10px 24px rgba(34, 34, 34, 0.08);
+}
+
 .listing-meta{
     display: flex;
     flex-wrap: wrap;

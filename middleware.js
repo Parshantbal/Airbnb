@@ -20,6 +20,7 @@ module.exports.isLoggedIn = (req, res, next) => {
 module.exports.saveUrlRedirect = (req, res, next) => {
    if (req.session.redirectUrl) {
       res.locals.redirectUrl = req.session.redirectUrl;
+      delete req.session.redirectUrl;
    }
    next();
 }
@@ -27,7 +28,12 @@ module.exports.saveUrlRedirect = (req, res, next) => {
 module.exports.isOwner = async (req, res, next) => {
    let { id } = req.params;
    let list = await listing.findById(id);
-   if (!list.owner.equals(res.locals.currUser._id)) {
+   if (!list) {
+      req.flash("error", "Listing you requested does not exist");
+      return res.redirect("/listing");
+   }
+
+   if (!res.locals.currUser || !list.owner || !list.owner.equals(res.locals.currUser._id)) {
 
       req.flash("error", "you are not the owner of this listing");
       return res.redirect(`/listing/${id}`)
