@@ -4,6 +4,7 @@
     const today = new Date().toISOString().split("T")[0];
     const reviewCount = list.reviews.length;
     const displayPrice = Number(list.price || 0);
+    const mapQuery = `${list.location}, ${list.country}`;
     const averageRating = reviewCount
         ? (list.reviews.reduce((sum, review) => sum + Number(review.rating || 0), 0) / reviewCount).toFixed(1)
         : null;
@@ -35,6 +36,36 @@
                 </form>
             </div>
         <% } %>
+
+        <section class="listing-map-section mt-4">
+            <div class="listing-map-head">
+                <div>
+                    <p class="map-kicker mb-1">Location</p>
+                    <h3 class="mb-1">Where you will stay</h3>
+                    <p class="text-muted mb-0"><%= list.location %>, <%= list.country %></p>
+                </div>
+                <a
+                    class="btn btn-outline-dark"
+                    target="_blank"
+                    rel="noopener"
+                    href="https://www.google.com/maps/search/?api=1&query=<%= encodeURIComponent(mapQuery) %>"
+                >
+                    Open map
+                </a>
+            </div>
+            <div class="listing-map-frame">
+                <iframe
+                    class="listing-map"
+                    title="Map for <%= list.title %>"
+                    loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade"
+                    src="https://maps.google.com/maps?hl=en&q=<%= encodeURIComponent(mapQuery) %>&z=16&ie=UTF8&output=embed"
+                ></iframe>
+                <div class="listing-map-pin" aria-hidden="true">
+                    <i class="fa-solid fa-location-dot"></i>
+                </div>
+            </div>
+        </section>
     </div>
 
     <div class="col-lg-3">

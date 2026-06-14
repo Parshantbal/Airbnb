@@ -9,6 +9,8 @@ const multer = require("multer");
 const ejsMate = require("ejs-mate")
 const Error = require("./util/expressError.js");
 const session = require("express-session");
+const connectMongo = require("connect-mongo");
+const MongoStore = connectMongo.default || connectMongo.MongoStore || connectMongo;
 const flash = require("connect-flash");
 const passport = require("passport");
 const localStrategy=require("passport-local");
@@ -38,7 +40,7 @@ app.engine("ejs", ejsMate);
 
 
 
-const MONGO_URL = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/wonderlust";
+const dbUrl = process.env.ATLASDB_URL || process.env.MONGO_URL || "mongodb://127.0.0.1:27017/wonderlust";
 
 main().then(() => {
     console.log("DB is connect")
@@ -47,12 +49,26 @@ main().then(() => {
 });
 
 async function main() {
-    await mongoose.connect(MONGO_URL)
+    await mongoose.connect(dbUrl)
 }
 
 
+const store = MongoStore.create({
+    mongoUrl: dbUrl,
+    crypto:{
+        secret: process.env.SECRET,
+    },
+    touchAfter:24*3600,
+});
+
+store.on("error", (err) => {
+    console.log("ERROR in Mongo session store", err);
+});
+
+
 const sessionOption = {
-    secret: process.env.SESSION_SECRET || "mySecretCode",
+    store,
+    secret: process.env.SECRET,
     resave : false,
     saveUninitialized:false,
     cookie:{
@@ -65,6 +81,7 @@ const sessionOption = {
 // app.get("/", (req, res) => {
 //     res.send("hii i am root")
 // });
+
 
 app.use(session(sessionOption));
 app.use(flash());
