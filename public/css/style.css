@@ -408,6 +408,27 @@ body{
     background-color: rgb(241, 59, 59);
     border: none;
 }
+
+.add-btn,
+.add-btn:visited{
+    color: white !important;
+}
+
+.add-btn:hover,
+.add-btn:focus,
+.add-btn:active{
+    background-color: #d92f2f !important;
+    color: white !important;
+    border-color: #d92f2f !important;
+}
+
+.btn-outline-dark:hover,
+.btn-outline-dark:focus,
+.btn-outline-dark:active{
+    background-color: #222222 !important;
+    color: white !important;
+    border-color: #222222 !important;
+}
 h2{
     display: flex;
     justify-content: center;
